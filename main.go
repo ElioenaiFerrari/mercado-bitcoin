@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/ElioenaiFerrari/mercado-bitcoin/src/dtos"
 	"github.com/ElioenaiFerrari/mercado-bitcoin/src/entities"
 	"github.com/ElioenaiFerrari/mercado-bitcoin/src/gateways"
 	"github.com/gorilla/mux"
@@ -36,13 +38,27 @@ func main() {
 		defer ws.Close()
 
 		channel := make(chan entities.Event)
-		for range time.Tick(time.Millisecond * 200) {
-			query := r.URL.Query()
-			coin := query.Get("coin")
 
-			if coin != "" {
+		var coinDto dtos.CoinDto
+		_, p, err := ws.ReadMessage()
+
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		if err := json.Unmarshal(p, &coinDto); err != nil {
+			log.Println(err)
+			return
+		}
+
+		fmt.Println(coinDto.Coin)
+
+		for range time.Tick(time.Millisecond * 200) {
+
+			if coinDto.Coin != "" {
 				go func() {
-					orderBook, err := mercadoBitcoinApi.GetOrderBook(coin)
+					orderBook, err := mercadoBitcoinApi.GetOrderBook(coinDto.Coin)
 
 					if err != nil {
 						log.Println(err)
@@ -59,7 +75,7 @@ func main() {
 			}
 
 			go func() {
-				trades, err := mercadoBitcoinApi.GetTrades(coin)
+				trades, err := mercadoBitcoinApi.GetTrades(coinDto.Coin)
 
 				if err != nil {
 					log.Println(err)
@@ -75,7 +91,7 @@ func main() {
 			}()
 
 			go func() {
-				ticker, err := mercadoBitcoinApi.GetTicker(coin)
+				ticker, err := mercadoBitcoinApi.GetTicker(coinDto.Coin)
 
 				if err != nil {
 					log.Println(err)
