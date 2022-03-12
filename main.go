@@ -54,7 +54,7 @@ func main() {
 
 		fmt.Printf("Coin: %s\n", p)
 
-		for range time.Tick(time.Millisecond * 200) {
+		for range time.Tick(time.Millisecond * 100) {
 
 			if coinDto.Coin != "" {
 				go func() {
