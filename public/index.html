@@ -10,10 +10,21 @@
     <h1>Hello, world!</h1>
   </body>
   <script>
-    const ws = new WebSocket('ws://127.0.0.1:3000/ws?coin=BTC');
+    const ws = new WebSocket('ws://127.0.0.1:3000/ws');
 
     ws.onopen = () => {
       console.log('connected');
+
+      const routeQuery = new URLSearchParams(window.location.search);
+      const coin = routeQuery.get('coin');
+
+      console.log(`coin: ${coin}`);
+
+      ws.send(
+        JSON.stringify({
+          coin,
+        })
+      );
     };
 
     ws.onmessage = (event) => {

@@ -52,7 +52,7 @@ func main() {
 			return
 		}
 
-		fmt.Println(coinDto.Coin)
+		fmt.Println(fmt.Sprintf("Coin: %s", coinDto.Coin))
 
 		for range time.Tick(time.Millisecond * 200) {
 
