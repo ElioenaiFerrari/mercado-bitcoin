@@ -7,7 +7,16 @@
     <title>Document</title>
   </head>
   <body>
-    <h1>Hello, world!</h1>
+    <div id="trades">
+      <h2>Trades</h2>
+      <ul></ul>
+    </div>
+    <div id="orderBook">
+      <h2>OrderBook</h2>
+    </div>
+    <div id="ticker">
+      <h2>Ticker</h2>
+    </div>
   </body>
   <script>
     const ws = new WebSocket('ws://127.0.0.1:3000/ws');
@@ -20,17 +29,31 @@
 
       console.log(`coin: ${coin}`);
 
-      ws.send(
-        JSON.stringify({
-          coin,
-        })
-      );
+      ws.send(JSON.stringify({ coin }));
     };
 
     ws.onmessage = (event) => {
       const response = JSON.parse(event.data);
 
-      console.log(response.type);
+      const strategies = {
+        trades: (response) => {
+          const trades = response.data;
+
+          console.log('trades', trades[0]);
+        },
+        orderbook: (response) => {
+          const orderBook = response.data;
+
+          console.log('orderBook', orderBook);
+        },
+        ticker: (response) => {
+          const ticker = response.data;
+
+          console.log('ticker', ticker);
+        },
+      };
+
+      strategies[response.type](response);
     };
 
     ws.onclose = () => {
