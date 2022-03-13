@@ -49,56 +49,12 @@
 
       ws.onmessage = (event) => {
         const response = JSON.parse(event.data);
+        console.log(response.type, response.data);
 
         const strategies = {
-          trades: (response) => {
-            const tradesElement = document.querySelector('#trades');
-            const trades = response.data;
-          },
-          orderbook: (response) => {
-            // const orderBookElement = document.querySelector('#orderBook');
-            // const orderBook = response.data;
-            // const bids = orderBook.bids;
-            // const asks = orderBook.asks;
-            // const bidsElement = document.createElement('ul');
-            // const asksElement = document.createElement('ul');
-            // bidsElement.classList.add('bids');
-            // asksElement.classList.add('asks');
-            // bids.forEach((bid) => {
-            //   const bidElement = document.createElement('li');
-            //   const bidPrice = document.createElement('span');
-            //   const bidAmount = document.createElement('span');
-            //   bidPrice.innerText = formatter.format(bid[0]);
-            //   bidAmount.innerText = formatter.format(bid[1]);
-            //   bidElement.appendChild(bidPrice);
-            //   bidElement.appendChild(bidAmount);
-            //   bidsElement.appendChild(bidElement);
-            // });
-            // asks.forEach((ask) => {
-            //   const askElement = document.createElement('li');
-            //   const askPrice = document.createElement('span');
-            //   const askAmount = document.createElement('span');
-            //   askPrice.innerText = formatter.format(ask[0]);
-            //   askAmount.innerText = formatter.format(ask[1]);
-            //   askElement.appendChild(askPrice);
-            //   askElement.appendChild(askAmount);
-            //   asksElement.appendChild(askElement);
-            // });
-            // orderBookElement.appendChild(bidsElement);
-            // orderBookElement.appendChild(asksElement);
-          },
-          ticker: (response) => {
-            // const tickerElement = document.querySelector('#ticker');
-            // const tickerText = document.createElement('p');
-            // const ticker = response.data;
-            // tickerText.innerText = `${formatter.format(ticker.last)}`;
-            // tickerElement.appendChild(tickerText);
-            // if (tickerElement.childNodes.length >= 1) {
-            //   tickerElement.childNodes.forEach((child) => {
-            //     tickerElement.removeChild(child);
-            //   });
-            // }
-          },
+          trades: (response) => {},
+          orderbook: (response) => {},
+          ticker: (response) => {},
         };
 
         strategies[response.type](response);

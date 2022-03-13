@@ -54,7 +54,7 @@ func main() {
 		fmt.Printf("Coin: %s\n", coinDto.Coin)
 
 		channel := make(chan entities.Event)
-		for range time.Tick(time.Millisecond * 500) {
+		for range time.Tick(time.Millisecond * 200) {
 
 			if coinDto.Coin != "" {
 				go func(channel chan entities.Event) {
