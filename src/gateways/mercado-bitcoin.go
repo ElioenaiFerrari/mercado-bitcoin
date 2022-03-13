@@ -15,6 +15,7 @@ type MercadoBitcoinApi struct {
 }
 
 func NewMercadoBitcoinApi() *MercadoBitcoinApi {
+
 	return &MercadoBitcoinApi{
 		Url: os.Getenv("API_URL"),
 	}

@@ -9,6 +9,7 @@ services:
     environment:
       API_URL: $API_URL
       PORT: $PORT
+      AVAILABLE_COINS: $AVAILABLE_COINS
     networks:
       - mercado-bitcoin
     ports:

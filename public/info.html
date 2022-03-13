@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1 id="back">Back</h1>
+
+    <section id="orderBook">
+      <h2>OrderBook</h2>
+    </section>
+    <section id="trades">
+      <h2>Trades</h2>
+    </section>
+    <section id="ticker">
+      <h2>Ticker</h2>
+    </section>
+  </body>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const formatter = Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 10,
+      });
+      const ws = new WebSocket('ws://127.0.0.1:3000/ws');
+      const back = document.getElementById('back');
+
+      back.addEventListener('click', () => {
+        window.history.back();
+
+        ws.close();
+      });
+
+      ws.onopen = () => {
+        console.log('connected');
+
+        const routeQuery = new URLSearchParams(window.location.search);
+        const coin = routeQuery.get('coin');
+
+        console.log(`coin: ${coin}`);
+
+        ws.send(JSON.stringify({ coin }));
+      };
+
+      ws.onmessage = (event) => {
+        const response = JSON.parse(event.data);
+
+        const strategies = {
+          trades: (response) => {
+            const tradesElement = document.querySelector('#trades');
+            const trades = response.data;
+          },
+          orderbook: (response) => {
+            // const orderBookElement = document.querySelector('#orderBook');
+            // const orderBook = response.data;
+            // const bids = orderBook.bids;
+            // const asks = orderBook.asks;
+            // const bidsElement = document.createElement('ul');
+            // const asksElement = document.createElement('ul');
+            // bidsElement.classList.add('bids');
+            // asksElement.classList.add('asks');
+            // bids.forEach((bid) => {
+            //   const bidElement = document.createElement('li');
+            //   const bidPrice = document.createElement('span');
+            //   const bidAmount = document.createElement('span');
+            //   bidPrice.innerText = formatter.format(bid[0]);
+            //   bidAmount.innerText = formatter.format(bid[1]);
+            //   bidElement.appendChild(bidPrice);
+            //   bidElement.appendChild(bidAmount);
+            //   bidsElement.appendChild(bidElement);
+            // });
+            // asks.forEach((ask) => {
+            //   const askElement = document.createElement('li');
+            //   const askPrice = document.createElement('span');
+            //   const askAmount = document.createElement('span');
+            //   askPrice.innerText = formatter.format(ask[0]);
+            //   askAmount.innerText = formatter.format(ask[1]);
+            //   askElement.appendChild(askPrice);
+            //   askElement.appendChild(askAmount);
+            //   asksElement.appendChild(askElement);
+            // });
+            // orderBookElement.appendChild(bidsElement);
+            // orderBookElement.appendChild(asksElement);
+          },
+          ticker: (response) => {
+            // const tickerElement = document.querySelector('#ticker');
+            // const tickerText = document.createElement('p');
+            // const ticker = response.data;
+            // tickerText.innerText = `${formatter.format(ticker.last)}`;
+            // tickerElement.appendChild(tickerText);
+            // if (tickerElement.childNodes.length >= 1) {
+            //   tickerElement.childNodes.forEach((child) => {
+            //     tickerElement.removeChild(child);
+            //   });
+            // }
+          },
+        };
+
+        strategies[response.type](response);
+      };
+
+      ws.onclose = () => {
+        console.log('disconnected');
+      };
+    });
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      outline: none;
+      font-family: Poppins, sans-serif;
+    }
+
+    body {
+      padding: 20px;
+    }
+
+    h1 {
+      font-weight: 100;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    h1:hover {
+      font-weight: bold;
+      text-decoration: underline;
+    }
+  </style>
+</html>

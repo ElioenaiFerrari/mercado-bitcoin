@@ -7,57 +7,80 @@
     <title>Document</title>
   </head>
   <body>
-    <div id="trades">
-      <h2>Trades</h2>
-      <ul></ul>
-    </div>
-    <div id="orderBook">
-      <h2>OrderBook</h2>
-    </div>
-    <div id="ticker">
-      <h2>Ticker</h2>
-    </div>
+    <h1>Available Coins</h1>
+    <ul></ul>
   </body>
   <script>
-    const ws = new WebSocket('ws://127.0.0.1:3000/ws');
-
-    ws.onopen = () => {
-      console.log('connected');
-
-      const routeQuery = new URLSearchParams(window.location.search);
-      const coin = routeQuery.get('coin');
-
-      console.log(`coin: ${coin}`);
-
-      ws.send(JSON.stringify({ coin }));
-    };
-
-    ws.onmessage = (event) => {
-      const response = JSON.parse(event.data);
-
-      const strategies = {
-        trades: (response) => {
-          const trades = response.data;
-
-          console.log('trades', trades[0]);
+    document.addEventListener('DOMContentLoaded', async () => {
+      const response = await fetch(`http://127.0.0.1:3000`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
         },
-        orderbook: (response) => {
-          const orderBook = response.data;
+      });
 
-          console.log('orderBook', orderBook);
-        },
-        ticker: (response) => {
-          const ticker = response.data;
+      const coins = await response.json();
 
-          console.log('ticker', ticker);
-        },
-      };
+      const ul = document.querySelector('ul');
 
-      strategies[response.type](response);
-    };
+      coins?.forEach((coin) => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
 
-    ws.onclose = () => {
-      console.log('disconnected');
-    };
+        a.href = `info.html?coin=${coin}`;
+
+        a.innerText = coin;
+
+        li.appendChild(a);
+
+        ul.appendChild(li);
+      });
+    });
   </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      outline: none;
+      font-family: Poppins, sans-serif;
+    }
+
+    body {
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2em;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    li {
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      border-radius: 4px;
+      background-color: #fff;
+    }
+
+    a {
+      text-decoration: none;
+      color: #000;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </html>

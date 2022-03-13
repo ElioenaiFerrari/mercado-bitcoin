@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ElioenaiFerrari/mercado-bitcoin/src/dtos"
@@ -37,8 +38,6 @@ func main() {
 
 		defer ws.Close()
 
-		channel := make(chan entities.Event)
-
 		var coinDto dtos.CoinDto
 		_, p, err := ws.ReadMessage()
 
@@ -54,14 +53,14 @@ func main() {
 
 		fmt.Printf("Coin: %s\n", coinDto.Coin)
 
-		for range time.Tick(time.Millisecond * 100) {
+		channel := make(chan entities.Event)
+		for range time.Tick(time.Millisecond * 500) {
 
 			if coinDto.Coin != "" {
-				go func() {
+				go func(channel chan entities.Event) {
 					orderBook, err := mercadoBitcoinApi.GetOrderBook(coinDto.Coin)
 
 					if err != nil {
-						log.Println(err)
 						return
 					}
 
@@ -71,59 +70,72 @@ func main() {
 					}
 
 					channel <- event
-				}()
-			}
+				}(channel)
 
-			go func() {
-				trades, err := mercadoBitcoinApi.GetTrades(coinDto.Coin)
+				go func(channel chan entities.Event) {
+					trades, err := mercadoBitcoinApi.GetTrades(coinDto.Coin)
 
-				if err != nil {
-					log.Println(err)
-					return
+					if err != nil {
+						return
+					}
+
+					event := entities.Event{
+						Type: "trades",
+						Data: trades,
+					}
+
+					channel <- event
+				}(channel)
+
+				go func(channel chan entities.Event) {
+					ticker, err := mercadoBitcoinApi.GetTicker(coinDto.Coin)
+
+					if err != nil {
+						return
+					}
+
+					event := entities.Event{
+						Type: "ticker",
+						Data: ticker,
+					}
+
+					channel <- event
+				}(channel)
+
+				select {
+				case event := <-channel:
+					if err := ws.WriteJSON(event); err != nil {
+						ws.Close()
+						return
+					}
+				default:
+					fmt.Println("no event")
 				}
-
-				event := entities.Event{
-					Type: "trades",
-					Data: trades,
-				}
-
-				channel <- event
-			}()
-
-			go func() {
-				ticker, err := mercadoBitcoinApi.GetTicker(coinDto.Coin)
-
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				event := entities.Event{
-					Type: "ticker",
-					Data: ticker,
-				}
-
-				channel <- event
-			}()
-
-			select {
-			case event := <-channel:
-				if err := ws.WriteJSON(event); err != nil {
-					log.Println(err)
-					return
-				}
-			default:
-				fmt.Println("no event")
 			}
 
 		}
 
 	})
 
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding")
+		availableCoinsString := os.Getenv("AVAILABLE_COINS")
+		availableCoins := strings.Split(availableCoinsString, ",")
+
+		jason, err := json.Marshal(availableCoins)
+
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		w.Write(jason)
+	})
 	port := os.Getenv("PORT")
 
 	log.Println(fmt.Sprintf("Listening on port %s", port))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
-
 }
