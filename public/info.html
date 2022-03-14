@@ -52,7 +52,13 @@
         console.log(response.type, response.data);
 
         const strategies = {
-          trades: (response) => {},
+          trades: (response) => {
+            const trades = response.data;
+
+            trades.forEach((trade) => {
+              console.log(trade);
+            });
+          },
           orderbook: (response) => {},
           ticker: (response) => {},
         };
