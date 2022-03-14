@@ -132,7 +132,7 @@ func main() {
 		}
 
 		w.Write(jason)
-	}).Methods(http.MethodGet)
+	})
 
 	port := os.Getenv("PORT")
 
