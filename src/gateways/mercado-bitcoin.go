@@ -67,7 +67,7 @@ func (mba *MercadoBitcoinApi) GetTrades(coin string) ([]entities.Trade, error) {
 	}
 
 	sort.SliceStable(trades, func(i, j int) bool {
-		return trades[i].Tid > trades[j].Tid
+		return trades[i].Date > trades[j].Date
 	})
 
 	return trades, nil

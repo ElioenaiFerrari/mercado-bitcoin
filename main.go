@@ -28,6 +28,9 @@ func main() {
 		r.Header.Set("Content-Type", "application/json")
 		r.Header.Set("Upgrade", "websocket")
 		r.Header.Set("Connection", "Upgrade")
+		r.Header.Set("Cache-Control", "no-cache")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
 
 		ws, err := upgrader.Upgrade(w, r, nil)
 
@@ -55,6 +58,15 @@ func main() {
 
 		channel := make(chan entities.Event)
 		for range time.Tick(time.Millisecond * 200) {
+			select {
+			case event := <-channel:
+				if err := ws.WriteJSON(event); err != nil {
+					ws.Close()
+					return
+				}
+			default:
+				fmt.Println("no event")
+			}
 
 			if coinDto.Coin != "" {
 				go func(channel chan entities.Event) {
@@ -102,15 +114,6 @@ func main() {
 					channel <- event
 				}(channel)
 
-				select {
-				case event := <-channel:
-					if err := ws.WriteJSON(event); err != nil {
-						ws.Close()
-						return
-					}
-				default:
-					fmt.Println("no event")
-				}
 			}
 
 		}
