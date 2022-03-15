@@ -14,6 +14,7 @@
     </section>
     <section id="trades">
       <h2>Trades</h2>
+      <ul></ul>
     </section>
     <section id="ticker">
       <h2>Ticker</h2>
@@ -49,14 +50,38 @@
 
       ws.onmessage = (event) => {
         const response = JSON.parse(event.data);
-        console.log(response.type, response.data);
 
         const strategies = {
           trades: (response) => {
             const trades = response.data;
 
-            trades.forEach((trade) => {
-              console.log(trade);
+            trades.forEach((trade, index) => {
+              const tradesParent = document.querySelector('#trades ul');
+              const tradeElement = document.createElement('div');
+              tradeElement.className = `trade ${trade.type}`;
+              tradeElement.id = `trade-${index}`;
+
+              const payload = ` <span> <b> #${
+                trade.tid
+              }</b> <br/>${formatter.format(trade.price)}</span>`;
+
+              tradeElement.innerHTML = payload;
+
+              const hasTrade = document.getElementById(tradeElement.id);
+
+              if (hasTrade) {
+                hasTrade.innerHTML = payload;
+              } else {
+                tradeElement.innerHTML = payload;
+
+                tradesParent.appendChild(tradeElement);
+              }
+
+              if (tradesParent.childNodes.length > 20) {
+                tradesParent.removeChild(
+                  tradesParent.childNodes[tradesParent.childNodes.length - 1]
+                );
+              }
             });
           },
           orderbook: (response) => {},
@@ -95,6 +120,33 @@
     h1:hover {
       font-weight: bold;
       text-decoration: underline;
+    }
+
+    #trades ul {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .trade {
+      color: white;
+      padding: 20px;
+      border-radius: 4px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .sell {
+      background-color: #f44336;
+    }
+
+    .buy {
+      background-color: #4caf50;
     }
   </style>
 </html>

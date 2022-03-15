@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"sort"
 
 	"github.com/ElioenaiFerrari/mercado-bitcoin/src/entities"
 )
@@ -64,6 +65,10 @@ func (mba *MercadoBitcoinApi) GetTrades(coin string) ([]entities.Trade, error) {
 	if err := json.Unmarshal(body, &trades); err != nil {
 		return trades, err
 	}
+
+	sort.SliceStable(trades, func(i, j int) bool {
+		return trades[i].Tid > trades[j].Tid
+	})
 
 	return trades, nil
 
