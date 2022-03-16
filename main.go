@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/ElioenaiFerrari/mercado-bitcoin/src/dtos"
@@ -16,8 +14,15 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+func hasEvent(events []string, event string) bool {
+	for _, e := range events {
+		return e == event
+	}
+
+	return false
+}
+
 func main() {
-	listenEvents := os.Getenv("LISTEN_EVENTS")
 
 	mercadoBitcoinApi := gateways.NewMercadoBitcoinApi()
 	upgrader := websocket.Upgrader{
@@ -43,7 +48,7 @@ func main() {
 
 		defer ws.Close()
 
-		var coinDto dtos.CoinDto
+		var subscribeDto dtos.SubscribeDto
 		_, p, err := ws.ReadMessage()
 
 		if err != nil {
@@ -51,15 +56,22 @@ func main() {
 			return
 		}
 
-		if err := json.Unmarshal(p, &coinDto); err != nil {
+		if err := json.Unmarshal(p, &subscribeDto); err != nil {
 			log.Println(err)
 			return
 		}
 
-		fmt.Printf("Coin: %s\n", coinDto.Coin)
+		if subscribeDto.UpdateMs < 200 {
+			subscribeDto.UpdateMs = 200
+		}
+
+		fmt.Printf("Coin: %s\n", subscribeDto.Coin)
+		fmt.Printf("Events: %s\n", subscribeDto.Events)
+		fmt.Printf("UpdateMs: %d\n", subscribeDto.UpdateMs)
 
 		channel := make(chan entities.Event)
-		for range time.Tick(time.Millisecond * 200) {
+
+		for range time.Tick(time.Millisecond * time.Duration(subscribeDto.UpdateMs)) {
 			select {
 			case event := <-channel:
 				if err := ws.WriteJSON(event); err != nil {
@@ -67,13 +79,25 @@ func main() {
 					return
 				}
 			default:
-				fmt.Println("no event")
+				event := entities.Event{
+					Type: "",
+					Data: "no events",
+				}
+
+				jason, err := json.Marshal(event)
+
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				ws.WriteMessage(websocket.TextMessage, jason)
 			}
 
-			if coinDto.Coin != "" {
-				if strings.Contains(listenEvents, "orderbook") {
+			if subscribeDto.Coin != "" {
+				if hasEvent(subscribeDto.Events, "orderbook") {
 					go func(channel chan entities.Event) {
-						orderBook, err := mercadoBitcoinApi.GetOrderBook(coinDto.Coin)
+						orderBook, err := mercadoBitcoinApi.GetOrderBook(subscribeDto.Coin)
 
 						if err != nil {
 							return
@@ -88,9 +112,9 @@ func main() {
 					}(channel)
 				}
 
-				if strings.Contains(listenEvents, "trades") {
+				if hasEvent(subscribeDto.Events, "trades") {
 					go func(channel chan entities.Event) {
-						trades, err := mercadoBitcoinApi.GetTrades(coinDto.Coin)
+						trades, err := mercadoBitcoinApi.GetTrades(subscribeDto.Coin)
 
 						if err != nil {
 							return
@@ -105,9 +129,9 @@ func main() {
 					}(channel)
 				}
 
-				if strings.Contains(listenEvents, "ticker") {
+				if hasEvent(subscribeDto.Events, "ticker") {
 					go func(channel chan entities.Event) {
-						ticker, err := mercadoBitcoinApi.GetTicker(coinDto.Coin)
+						ticker, err := mercadoBitcoinApi.GetTicker(subscribeDto.Coin)
 
 						if err != nil {
 							return
@@ -121,9 +145,7 @@ func main() {
 						channel <- event
 					}(channel)
 				}
-
 			}
-
 		}
 
 	})
@@ -131,8 +153,6 @@ func main() {
 	port := 80
 
 	log.Println(fmt.Sprintf("Listening on port %d", port))
-
-	fmt.Printf("Listen events: %s\n", listenEvents)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), router))
 }
