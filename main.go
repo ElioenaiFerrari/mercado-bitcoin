@@ -137,9 +137,9 @@ func main() {
 		w.Write(jason)
 	})
 
-	port := os.Getenv("PORT")
+	port := 80
 
-	log.Println(fmt.Sprintf("Listening on port %s", port))
+	log.Println(fmt.Sprintf("Listening on port %d", port))
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), router))
 }
