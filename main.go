@@ -17,6 +17,8 @@ import (
 )
 
 func main() {
+	listenEvents := os.Getenv("LISTEN_EVENTS")
+
 	mercadoBitcoinApi := gateways.NewMercadoBitcoinApi()
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
@@ -69,50 +71,56 @@ func main() {
 			}
 
 			if coinDto.Coin != "" {
-				go func(channel chan entities.Event) {
-					orderBook, err := mercadoBitcoinApi.GetOrderBook(coinDto.Coin)
+				if strings.Contains(listenEvents, "orderbook") {
+					go func(channel chan entities.Event) {
+						orderBook, err := mercadoBitcoinApi.GetOrderBook(coinDto.Coin)
 
-					if err != nil {
-						return
-					}
+						if err != nil {
+							return
+						}
 
-					event := entities.Event{
-						Type: "orderbook",
-						Data: orderBook,
-					}
+						event := entities.Event{
+							Type: "orderbook",
+							Data: orderBook,
+						}
 
-					channel <- event
-				}(channel)
+						channel <- event
+					}(channel)
+				}
 
-				go func(channel chan entities.Event) {
-					trades, err := mercadoBitcoinApi.GetTrades(coinDto.Coin)
+				if strings.Contains(listenEvents, "trades") {
+					go func(channel chan entities.Event) {
+						trades, err := mercadoBitcoinApi.GetTrades(coinDto.Coin)
 
-					if err != nil {
-						return
-					}
+						if err != nil {
+							return
+						}
 
-					event := entities.Event{
-						Type: "trades",
-						Data: trades,
-					}
+						event := entities.Event{
+							Type: "trades",
+							Data: trades,
+						}
 
-					channel <- event
-				}(channel)
+						channel <- event
+					}(channel)
+				}
 
-				go func(channel chan entities.Event) {
-					ticker, err := mercadoBitcoinApi.GetTicker(coinDto.Coin)
+				if strings.Contains(listenEvents, "ticker") {
+					go func(channel chan entities.Event) {
+						ticker, err := mercadoBitcoinApi.GetTicker(coinDto.Coin)
 
-					if err != nil {
-						return
-					}
+						if err != nil {
+							return
+						}
 
-					event := entities.Event{
-						Type: "ticker",
-						Data: ticker,
-					}
+						event := entities.Event{
+							Type: "ticker",
+							Data: ticker,
+						}
 
-					channel <- event
-				}(channel)
+						channel <- event
+					}(channel)
+				}
 
 			}
 
@@ -120,26 +128,11 @@ func main() {
 
 	})
 
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET")
-		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding")
-		availableCoinsString := os.Getenv("AVAILABLE_COINS")
-		availableCoins := strings.Split(availableCoinsString, ",")
-
-		jason, err := json.Marshal(availableCoins)
-
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		w.Write(jason)
-	})
-
 	port := 80
 
 	log.Println(fmt.Sprintf("Listening on port %d", port))
+
+	fmt.Printf("Listen events: %s\n", listenEvents)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), router))
 }
