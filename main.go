@@ -16,7 +16,9 @@ import (
 
 func hasEvent(events []string, event string) bool {
 	for _, e := range events {
-		return e == event
+		if e == event {
+			return true
+		}
 	}
 
 	return false
@@ -72,28 +74,6 @@ func main() {
 		channel := make(chan entities.Event)
 
 		for range time.Tick(time.Millisecond * time.Duration(subscribeDto.UpdateMs)) {
-			select {
-			case event := <-channel:
-				if err := ws.WriteJSON(event); err != nil {
-					ws.Close()
-					return
-				}
-			default:
-				event := entities.Event{
-					Type: "",
-					Data: "no events",
-				}
-
-				jason, err := json.Marshal(event)
-
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				ws.WriteMessage(websocket.TextMessage, jason)
-			}
-
 			if subscribeDto.Coin != "" {
 				if hasEvent(subscribeDto.Events, "orderbook") {
 					go func(channel chan entities.Event) {
@@ -110,6 +90,13 @@ func main() {
 
 						channel <- event
 					}(channel)
+
+					event := <-channel
+
+					if err := ws.WriteJSON(event); err != nil {
+						ws.Close()
+						return
+					}
 				}
 
 				if hasEvent(subscribeDto.Events, "trades") {
@@ -127,6 +114,13 @@ func main() {
 
 						channel <- event
 					}(channel)
+
+					event := <-channel
+
+					if err := ws.WriteJSON(event); err != nil {
+						ws.Close()
+						return
+					}
 				}
 
 				if hasEvent(subscribeDto.Events, "ticker") {
@@ -144,6 +138,13 @@ func main() {
 
 						channel <- event
 					}(channel)
+
+					event := <-channel
+
+					if err := ws.WriteJSON(event); err != nil {
+						ws.Close()
+						return
+					}
 				}
 			}
 		}
