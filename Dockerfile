@@ -9,7 +9,7 @@ COPY . .
 ENV API_URL=https://www.mercadobitcoin.net/api
 
 RUN go get
-RUN go build -o main
+RUN go build -ldflags="-w -s" -o main
 
 EXPOSE 80
 
